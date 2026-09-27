@@ -139,7 +139,7 @@ static public class AssignmentPart1
 //  This will enable the needed UI/function calls for your to proceed with your assignment.
 static public class AssignmentConfiguration
 {
-    public const int PartOfAssignmentThatIsInDevelopment = 1;
+    public const int PartOfAssignmentThatIsInDevelopment = 2;
 }
 
 /*
@@ -179,15 +179,116 @@ static public class AssignmentPart2
 {
 
     static List<string> listOfPartyNames;
+    static List<LinkedList<PartyCharacter>> listOfParties;
+
 
     static public void GameStart()
     {
         listOfPartyNames = new List<string>();
-        listOfPartyNames.Add("sample 1");
-        listOfPartyNames.Add("sample 2");
-        listOfPartyNames.Add("sample 3");
+        listOfParties = new List<LinkedList<PartyCharacter>>();
 
+
+        LoadAllPartiesFromFile();
         GameContent.RefreshUI();
+    }
+
+    static void SaveAllPartiesToFile()
+    {
+        StreamWriter writer = new StreamWriter(
+            Application.persistentDataPath + "/partySaves.txt"
+        );
+
+        writer.WriteLine(listOfParties.Count);
+
+        for (int i = 0; i < listOfParties.Count; i++)
+        {
+            // Save the party name
+            writer.WriteLine(listOfPartyNames[i]);
+
+            // Save how many characters are in this party
+            writer.WriteLine(listOfParties[i].Count);
+
+            foreach (PartyCharacter pc in listOfParties[i])
+            {
+                writer.WriteLine(pc.classID);
+                writer.WriteLine(pc.health);
+                writer.WriteLine(pc.mana);
+                writer.WriteLine(pc.strength);
+                writer.WriteLine(pc.agility);
+                writer.WriteLine(pc.wisdom);
+
+                // Save equipment count
+                writer.WriteLine(pc.equipment.Count);
+
+                // Save each equipment ID
+                foreach (int equipID in pc.equipment)
+                {
+                    writer.WriteLine(equipID);
+                }
+            }
+        }
+
+        writer.Close();
+    }
+
+    static void LoadAllPartiesFromFile()
+    {
+        string filePath = Application.persistentDataPath + "/partySaves.txt";
+
+        if (!File.Exists(filePath))
+        {
+            return;
+        }
+
+        StreamReader reader = new StreamReader(filePath);
+
+        int numberOfParties = int.Parse(reader.ReadLine());
+
+        for (int i = 0; i < numberOfParties; i++)
+        {
+            // Load party name
+            string partyName = reader.ReadLine();
+            listOfPartyNames.Add(partyName);
+
+            // Load number of characters
+            int characterCount = int.Parse(reader.ReadLine());
+
+            LinkedList<PartyCharacter> loadedParty =
+                new LinkedList<PartyCharacter>();
+
+            for (int j = 0; j < characterCount; j++)
+            {
+                int classID = int.Parse(reader.ReadLine());
+                int health = int.Parse(reader.ReadLine());
+                int mana = int.Parse(reader.ReadLine());
+                int strength = int.Parse(reader.ReadLine());
+                int agility = int.Parse(reader.ReadLine());
+                int wisdom = int.Parse(reader.ReadLine());
+
+                PartyCharacter pc = new PartyCharacter(
+                    classID,
+                    health,
+                    mana,
+                    strength,
+                    agility,
+                    wisdom
+                );
+
+                int equipmentCount = int.Parse(reader.ReadLine());
+
+                for (int k = 0; k < equipmentCount; k++)
+                {
+                    int equipID = int.Parse(reader.ReadLine());
+                    pc.equipment.AddLast(equipID);
+                }
+
+                loadedParty.AddLast(pc);
+            }
+
+            listOfParties.Add(loadedParty);
+        }
+
+        reader.Close();
     }
 
     static public List<string> GetListOfPartyNames()
@@ -197,21 +298,86 @@ static public class AssignmentPart2
 
     static public void LoadPartyDropDownChanged(string selectedName)
     {
+        int partyIndex = listOfPartyNames.IndexOf(selectedName);
+
+        if (partyIndex >= 0)
+        {
+            GameContent.partyCharacters.Clear();
+
+            foreach (PartyCharacter pc in listOfParties[partyIndex])
+            {
+                PartyCharacter newPC = new PartyCharacter(
+                    pc.classID,
+                    pc.health,
+                    pc.mana,
+                    pc.strength,
+                    pc.agility,
+                    pc.wisdom
+                );
+
+                foreach (int equipID in pc.equipment)
+                {
+                    newPC.equipment.AddLast(equipID);
+                }
+
+                GameContent.partyCharacters.AddLast(newPC);
+            }
+        }
+
         GameContent.RefreshUI();
     }
 
     static public void SavePartyButtonPressed()
     {
+        string partyName = GameContent.GetPartyNameFromInput();
+
+        listOfPartyNames.Add(partyName);
+
+        LinkedList<PartyCharacter> savedParty = new LinkedList<PartyCharacter>();
+
+        foreach (PartyCharacter pc in GameContent.partyCharacters)
+        {
+            PartyCharacter newPC = new PartyCharacter(
+                pc.classID,
+                pc.health,
+                pc.mana,
+                pc.strength,
+                pc.agility,
+                pc.wisdom
+            );
+
+            foreach (int equipID in pc.equipment)
+            {
+                newPC.equipment.AddLast(equipID);
+            }
+
+            savedParty.AddLast(newPC);
+        }
+
+        listOfParties.Add(savedParty);
+
+        SaveAllPartiesToFile();
+
         GameContent.RefreshUI();
     }
 
     static public void DeletePartyButtonPressed()
     {
+        string selectedName = GameContent.GetSelectedPartyName();
+
+        int partyIndex = listOfPartyNames.IndexOf(selectedName);
+
+        if (partyIndex >= 0)
+        {
+            listOfPartyNames.RemoveAt(partyIndex);
+            listOfParties.RemoveAt(partyIndex);
+
+            SaveAllPartiesToFile();
+        }
+
         GameContent.RefreshUI();
     }
-
 }
-
 #endregion
 
 

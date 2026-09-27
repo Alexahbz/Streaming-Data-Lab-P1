@@ -224,5 +224,19 @@ public class SystemManager : MonoBehaviour
 
     }
 
+    public string GetSelectedPartyName()
+    {
+        Dropdown dropdown = loadPartyDropDown.GetComponent<Dropdown>();
+
+        if (dropdown.options.Count == 0)
+        {
+            return "";
+        }
+
+        int menuIndex = dropdown.value;
+
+        return dropdown.options[menuIndex].text;
+    }
+
 }
 
