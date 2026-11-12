@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using System.Text;
 
 
 #region Assignment Instructions
@@ -152,7 +153,7 @@ To aid you in this challenge, the UI has been altered.
 
     The load button has been replaced with a drop down list.  
     When this load party drop down list is changed, LoadPartyDropDownChanged(string selectedName) will be called.  
-    When this drop down is created, it will be populated with the return value of GetListOfPartyNames().
+    When this drop down is created, it will be populated with the return value of GetpartyNames().
 
     GameStart() is called when the program starts.
 
@@ -178,14 +179,14 @@ Good luck, journey well.
 static public class AssignmentPart2
 {
 
-    static List<string> listOfPartyNames;
-    static List<LinkedList<PartyCharacter>> listOfParties;
+    static List<string> partyNames;
+    static List<LinkedList<PartyCharacter>> savedParties;
 
 
     static public void GameStart()
     {
-        listOfPartyNames = new List<string>();
-        listOfParties = new List<LinkedList<PartyCharacter>>();
+        partyNames = new List<string>();
+        savedParties = new List<LinkedList<PartyCharacter>>();
 
 
         LoadAllPartiesFromFile();
@@ -194,42 +195,49 @@ static public class AssignmentPart2
 
     static void SaveAllPartiesToFile()
     {
-        StreamWriter writer = new StreamWriter(
-            Application.persistentDataPath + "/partySaves.txt"
-        );
+        string partyData = SerializeAllParties();
+        WritePartyDataToFile(partyData);
+    }
+    static string SerializeAllParties()
+    {
+        StringBuilder partyData = new StringBuilder();
 
-        writer.WriteLine(listOfParties.Count);
+        partyData.AppendLine(partyNames.Count.ToString());
 
-        for (int i = 0; i < listOfParties.Count; i++)
+        for (int i = 0; i < partyNames.Count; i++)
         {
-            // Save the party name
-            writer.WriteLine(listOfPartyNames[i]);
+            partyData.AppendLine(partyNames[i]);
+            partyData.AppendLine(savedParties[i].Count.ToString());
 
-            // Save how many characters are in this party
-            writer.WriteLine(listOfParties[i].Count);
-
-            foreach (PartyCharacter pc in listOfParties[i])
+            foreach (PartyCharacter character in savedParties[i])
             {
-                writer.WriteLine(pc.classID);
-                writer.WriteLine(pc.health);
-                writer.WriteLine(pc.mana);
-                writer.WriteLine(pc.strength);
-                writer.WriteLine(pc.agility);
-                writer.WriteLine(pc.wisdom);
+                partyData.AppendLine(character.classID.ToString());
+                partyData.AppendLine(character.health.ToString());
+                partyData.AppendLine(character.mana.ToString());
+                partyData.AppendLine(character.strength.ToString());
+                partyData.AppendLine(character.agility.ToString());
+                partyData.AppendLine(character.wisdom.ToString());
+                partyData.AppendLine(character.equipment.Count.ToString());
 
-                // Save equipment count
-                writer.WriteLine(pc.equipment.Count);
-
-                // Save each equipment ID
-                foreach (int equipID in pc.equipment)
+                foreach (int equipmentID in character.equipment)
                 {
-                    writer.WriteLine(equipID);
+                    partyData.AppendLine(equipmentID.ToString());
                 }
             }
         }
 
-        writer.Close();
+        return partyData.ToString();
     }
+    static void WritePartyDataToFile(string partyData)
+    {
+        string filePath = Application.persistentDataPath + "/partySaves.txt";
+
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            writer.Write(partyData);
+        }
+    }
+
 
     static void LoadAllPartiesFromFile()
     {
@@ -248,7 +256,7 @@ static public class AssignmentPart2
         {
             // Load party name
             string partyName = reader.ReadLine();
-            listOfPartyNames.Add(partyName);
+            partyNames.Add(partyName);
 
             // Load number of characters
             int characterCount = int.Parse(reader.ReadLine());
@@ -285,26 +293,26 @@ static public class AssignmentPart2
                 loadedParty.AddLast(pc);
             }
 
-            listOfParties.Add(loadedParty);
+            savedParties.Add(loadedParty);
         }
 
         reader.Close();
     }
 
-    static public List<string> GetListOfPartyNames()
+    static public List<string> GetpartyNames()
     {
-        return listOfPartyNames;
+        return partyNames;
     }
 
     static public void LoadPartyDropDownChanged(string selectedName)
     {
-        int partyIndex = listOfPartyNames.IndexOf(selectedName);
+        int partyIndex = partyNames.IndexOf(selectedName);
 
         if (partyIndex >= 0)
         {
             GameContent.partyCharacters.Clear();
 
-            foreach (PartyCharacter pc in listOfParties[partyIndex])
+            foreach (PartyCharacter pc in savedParties[partyIndex])
             {
                 PartyCharacter newPC = new PartyCharacter(
                     pc.classID,
@@ -331,7 +339,7 @@ static public class AssignmentPart2
     {
         string partyName = GameContent.GetPartyNameFromInput();
 
-        listOfPartyNames.Add(partyName);
+        partyNames.Add(partyName);
 
         LinkedList<PartyCharacter> savedParty = new LinkedList<PartyCharacter>();
 
@@ -354,7 +362,7 @@ static public class AssignmentPart2
             savedParty.AddLast(newPC);
         }
 
-        listOfParties.Add(savedParty);
+        savedParties.Add(savedParty);
 
         SaveAllPartiesToFile();
 
@@ -365,12 +373,12 @@ static public class AssignmentPart2
     {
         string selectedName = GameContent.GetSelectedPartyName();
 
-        int partyIndex = listOfPartyNames.IndexOf(selectedName);
+        int partyIndex = partyNames.IndexOf(selectedName);
 
         if (partyIndex >= 0)
         {
-            listOfPartyNames.RemoveAt(partyIndex);
-            listOfParties.RemoveAt(partyIndex);
+            partyNames.RemoveAt(partyIndex);
+            savedParties.RemoveAt(partyIndex);
 
             SaveAllPartiesToFile();
         }
