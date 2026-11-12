@@ -241,62 +241,74 @@ static public class AssignmentPart2
 
     static void LoadAllPartiesFromFile()
     {
-        string filePath = Application.persistentDataPath + "/partySaves.txt";
+        string partyData = ReadPartyDataFromFile();
 
-        if (!File.Exists(filePath))
+        if (partyData == null)
         {
             return;
         }
 
-        StreamReader reader = new StreamReader(filePath);
+        DeserializeAllParties(partyData);
+    }
+    static string ReadPartyDataFromFile()
+    {
+        string filePath = Application.persistentDataPath + "/partySaves.txt";
 
-        int numberOfParties = int.Parse(reader.ReadLine());
-
-        for (int i = 0; i < numberOfParties; i++)
+        if (!File.Exists(filePath))
         {
-            // Load party name
-            string partyName = reader.ReadLine();
-            partyNames.Add(partyName);
-
-            // Load number of characters
-            int characterCount = int.Parse(reader.ReadLine());
-
-            LinkedList<PartyCharacter> loadedParty =
-                new LinkedList<PartyCharacter>();
-
-            for (int j = 0; j < characterCount; j++)
-            {
-                int classID = int.Parse(reader.ReadLine());
-                int health = int.Parse(reader.ReadLine());
-                int mana = int.Parse(reader.ReadLine());
-                int strength = int.Parse(reader.ReadLine());
-                int agility = int.Parse(reader.ReadLine());
-                int wisdom = int.Parse(reader.ReadLine());
-
-                PartyCharacter pc = new PartyCharacter(
-                    classID,
-                    health,
-                    mana,
-                    strength,
-                    agility,
-                    wisdom
-                );
-
-                int equipmentCount = int.Parse(reader.ReadLine());
-
-                for (int k = 0; k < equipmentCount; k++)
-                {
-                    int equipID = int.Parse(reader.ReadLine());
-                    pc.equipment.AddLast(equipID);
-                }
-
-                loadedParty.AddLast(pc);
-            }
-
-            savedParties.Add(loadedParty);
+            return null;
         }
 
-        reader.Close();
+        using (StreamReader reader = new StreamReader(filePath))
+        {
+            return reader.ReadToEnd();
+        }
+    }
+
+    static void DeserializeAllParties(string partyData)
+    {
+        using (StringReader reader = new StringReader(partyData))
+        {
+            int numberOfParties = int.Parse(reader.ReadLine());
+
+            for (int i = 0; i < numberOfParties; i++)
+            {
+                string partyName = reader.ReadLine();
+                partyNames.Add(partyName);
+
+                int numberOfCharacters = int.Parse(reader.ReadLine());
+
+                LinkedList<PartyCharacter> party = new LinkedList<PartyCharacter>();
+
+                for (int j = 0; j < numberOfCharacters; j++)
+                {
+                    PartyCharacter character = new PartyCharacter();
+
+                    character.classID = int.Parse(reader.ReadLine());
+                    character.health = int.Parse(reader.ReadLine());
+                    character.mana = int.Parse(reader.ReadLine());
+                    character.strength = int.Parse(reader.ReadLine());
+                    character.agility = int.Parse(reader.ReadLine());
+                    character.wisdom = int.Parse(reader.ReadLine());
+
+                    int equipmentCount = int.Parse(reader.ReadLine());
+
+                    for (int k = 0; k < equipmentCount; k++)
+                    {
+                        character.equipment.AddLast(int.Parse(reader.ReadLine()));
+                    }
+
+                    party.AddLast(character);
+                }
+
+                savedParties.Add(party);
+            }
+        }
+    }
+
+    public static List<string> GetListOfPartyNames()
+    {
+        return partyNames;
     }
 
     static public List<string> GetpartyNames()
