@@ -71,59 +71,102 @@ static public class AssignmentPart1
 
     static public void SavePartyButtonPressed()
     {
-        StreamWriter writer = new StreamWriter(Application.persistentDataPath + "/partySave.txt");
+        string partyData = SerializeParty();
+        WritePartyToFile(partyData);
+    }
 
-        foreach (PartyCharacter pc in GameContent.partyCharacters)
+    static string SerializeParty()
+    {
+        StringBuilder partyData = new StringBuilder();
+
+        foreach (PartyCharacter character in GameContent.partyCharacters)
         {
-            writer.WriteLine(pc.classID);
-            writer.WriteLine(pc.health);
-            writer.WriteLine(pc.mana);
-            writer.WriteLine(pc.strength);
-            writer.WriteLine(pc.agility);
-            writer.WriteLine(pc.wisdom);
+            partyData.AppendLine(character.classID.ToString());
+            partyData.AppendLine(character.health.ToString());
+            partyData.AppendLine(character.mana.ToString());
+            partyData.AppendLine(character.strength.ToString());
+            partyData.AppendLine(character.agility.ToString());
+            partyData.AppendLine(character.wisdom.ToString());
 
-            writer.WriteLine(pc.equipment.Count);
+            partyData.AppendLine(character.equipment.Count.ToString());
 
-            foreach (int equipID in pc.equipment)
+            foreach (int equipmentID in character.equipment)
             {
-                writer.WriteLine(equipID);
+                partyData.AppendLine(equipmentID.ToString());
             }
         }
 
-        writer.Close();
+        return partyData.ToString();
+    }
+    static void WritePartyToFile(string partyData)
+    {
+        string filePath = Application.persistentDataPath + "/partySave.txt";
+
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            writer.Write(partyData);
+        }
     }
 
     static public void LoadPartyButtonPressed()
     {
-        StreamReader reader = new StreamReader(Application.persistentDataPath + "/partySave.txt");
+        string partyData = ReadPartyFromFile();
 
-        GameContent.partyCharacters.Clear();
-
-        while (!reader.EndOfStream)
+        if (partyData == null)
         {
-            int classID = int.Parse(reader.ReadLine());
-            int health = int.Parse(reader.ReadLine());
-            int mana = int.Parse(reader.ReadLine());
-            int strength = int.Parse(reader.ReadLine());
-            int agility = int.Parse(reader.ReadLine());
-            int wisdom = int.Parse(reader.ReadLine());
-
-            PartyCharacter pc = new PartyCharacter(classID, health, mana, strength, agility, wisdom);
-
-            int equipmentCount = int.Parse(reader.ReadLine());
-
-            for (int i = 0; i < equipmentCount; i++)
-            {
-                int equipID = int.Parse(reader.ReadLine());
-                pc.equipment.AddLast(equipID);
-            }
-
-            GameContent.partyCharacters.AddLast(pc);
+            return;
         }
 
-        reader.Close();
+        DeserializeParty(partyData);
 
         GameContent.RefreshUI();
+    }
+
+    static string ReadPartyFromFile()
+    {
+        string filePath = Application.persistentDataPath + "/partySave.txt";
+
+        if (!File.Exists(filePath))
+        {
+            return null;
+        }
+
+        using (StreamReader reader = new StreamReader(filePath))
+        {
+            return reader.ReadToEnd();
+        }
+    }
+
+    static void DeserializeParty(string partyData)
+    {
+        GameContent.partyCharacters.Clear();
+
+        using (StringReader reader = new StringReader(partyData))
+        {
+            while (reader.Peek() != -1)
+            {
+                int classID = int.Parse(reader.ReadLine());
+                int health = int.Parse(reader.ReadLine());
+                int mana = int.Parse(reader.ReadLine());
+                int strength = int.Parse(reader.ReadLine());
+                int agility = int.Parse(reader.ReadLine());
+                int wisdom = int.Parse(reader.ReadLine());
+
+                PartyCharacter character = new PartyCharacter(
+                    classID, health, mana, strength, agility, wisdom
+                );
+
+                int equipmentCount = int.Parse(reader.ReadLine());
+
+                for (int i = 0; i < equipmentCount; i++)
+                {
+                    int equipmentID = int.Parse(reader.ReadLine());
+                    character.equipment.AddLast(equipmentID);
+                }
+
+                GameContent.partyCharacters.AddLast(character);
+            }
+        }
     }
 
 }
